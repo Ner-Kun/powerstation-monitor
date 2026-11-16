@@ -705,8 +705,15 @@ def main() -> int:
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
         stream=sys.stdout,
     )
+    if not (ROOT / "config.json").is_file():
+        print("config.json is missing: copy config.example.json and set station_host", file=sys.stderr)
+        return 2
     cfg = load_config()
-    authkey = load_authkey(cfg["authkey_file"])
+    try:
+        authkey = load_authkey(cfg["authkey_file"])
+    except (OSError, KeyError, ValueError):
+        print(f"no authKey in {cfg['authkey_file']}: run tools/get_authkey.py first", file=sys.stderr)
+        return 2
     store = StateStore()
     history = History(ROOT / cfg["history_db"], cfg["history_interval_seconds"], cfg["history_retention_days"])
     power = PowerTracker(

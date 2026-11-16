@@ -178,7 +178,7 @@ chmod +x bin/ntfy-cgo
 ```bash
 mkdir -p ~/.termux/boot
 cp deploy/start-powerstation.sh ~/.termux/boot/
-chmod +x ~/.termux/boot/start-powerstation.sh keepalive.sh
+chmod +x ~/.termux/boot/start-powerstation.sh deploy/keepalive.sh
 termux-wake-lock
 ```
 
@@ -194,7 +194,7 @@ termux-wake-lock
 ### 8. Запусти
 
 ```bash
-./keepalive.sh
+./deploy/keepalive.sh
 ```
 
 Перевірка:

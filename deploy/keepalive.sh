@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/sh
 cd "$HOME/powerstation-monitor" || exit 1
+mkdir -p ./data
 
 termux-wake-lock 2>/dev/null || true
 
