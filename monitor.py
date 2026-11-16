@@ -253,12 +253,21 @@ class AlertEngine:
                 self.offline_since = now
             elif not self.offline_alerted and now - self.offline_since >= 30:
                 self.offline_alerted = True
-                self._alert(
-                    "Станція не відповідає",
-                    "Немає телеметрії вже понад хвилину. Перевір Wi-Fi і живлення станції.",
-                    4,
-                    ["warning"],
-                )
+                if state.get("link") == "up":
+                    self._alert(
+                        "Станція не надсилає дані",
+                        "З'єднання зі станцією є, але телеметрія не надходить. "
+                        "Схоже, завис Wi-Fi-модуль: вимкни станцію і ввімкни знову.",
+                        4,
+                        ["warning"],
+                    )
+                else:
+                    self._alert(
+                        "Станція не відповідає",
+                        "Немає зв'язку зі станцією. Перевір Wi-Fi і живлення.",
+                        4,
+                        ["warning"],
+                    )
         else:
             self.offline_since = None
             self.offline_alerted = False
@@ -535,7 +544,7 @@ def derive_state(
 
     if not online:
         status = "offline"
-        status_text = "Немає даних"
+        status_text = "Немає даних" if state.get("link") != "up" else "Станція не надсилає дані"
     elif battery_discharging:
         status = "on_battery"
         status_text = "На батареї"
@@ -566,6 +575,7 @@ def derive_state(
             "charging": charging,
             "status": status,
             "status_text": status_text,
+            "link": state.get("link"),
             "remaining_h": remaining_h,
             "remaining_kind": remaining_kind,
             "remaining_text": remaining_text,

@@ -37,6 +37,7 @@ READ_TAGS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 20, 27, 28, 31, 34, 43, 
 
 INITIAL_STATE = {
     "online": False,
+    "link": "down",
     "battery": None,
     "remain_time": None,
     "remain_charging_time": None,
@@ -260,18 +261,21 @@ class StationClient:
                 if not self._stop.is_set():
                     log.warning("station connection lost: %s", exc)
                     self._set_online(False)
+                    self._set_link("down")
             if self._stop.wait(self._backoff):
                 break
             self._backoff = min(self._backoff * 2, 30)
 
     def _connect_and_loop(self) -> None:
         log.info("connecting to %s:%s", self.host, self.port)
+        self._set_link("connecting")
         sock = socket.create_connection((self.host, self.port), timeout=8)
         sock.settimeout(1.0)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         self._sock = sock
         self._reader = _FrameReader()
         self._handshake()
+        self._set_link("up")
         self._backoff = 1.0
         self._set_online(True)
         self._keepalive()
@@ -455,5 +459,12 @@ class StationClient:
     def _set_online(self, online: bool) -> None:
         with self._lock:
             self.state["online"] = online
+            snapshot = dict(self.state)
+        self.on_state(snapshot)
+
+    def _set_link(self, kind: str) -> None:
+        """down: no socket; connecting: socket open, handshake running; up: logged in."""
+        with self._lock:
+            self.state["link"] = kind
             snapshot = dict(self.state)
         self.on_state(snapshot)
