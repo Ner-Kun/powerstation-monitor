@@ -337,6 +337,9 @@ class StationClient:
         log.info("logged in, result=%s", result)
 
     def _keepalive(self) -> None:
+        # The station stops streaming when the subscribe triple is not re-asserted
+        # inside its 30 s heartbeat window; 20 s was already too slow on some units,
+        # so this runs well under 12 s.
         self._send(CMD_WRITE, struct.pack(">H", (100 << 3) | 2) + b"\x00\x03")
         self._send(CMD_READ, b"".join(struct.pack(">H", tag) for tag in READ_TAGS))
         self._send(CMD_HB, b"\x00\x0a\x00\x1e\x00\x12\x00\x01")
