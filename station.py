@@ -212,20 +212,6 @@ def ttlv_decode(buf: bytes) -> list[tuple[int, str, object]]:
     return fields
 
 
-POWER_LIMITS = {
-    "input_w": 3000,
-    "output_w": 3000,
-    "ac_input_w": 3000,
-    "dc_input_w": 1000,
-    "ac_out_w": 2400,
-    "usb1_w": 150,
-    "usb2_w": 150,
-    "typec1_w": 150,
-    "typec2_w": 150,
-    "dc_out_w": 300,
-}
-
-
 class StationClient:
     def __init__(
         self,
@@ -431,25 +417,25 @@ class StationClient:
             if tag == 6:
                 for sub_tag, _sub_typ, sub_value in value:  # type: ignore[union-attr]
                     if sub_tag == 2:
-                        self._store("ac_out_w", sub_value)
+                        self.state["ac_out_w"] = sub_value
                     elif sub_tag == 3:
                         self.state["ac_out_v"] = sub_value
             elif tag == 7:
                 for sub_tag, _sub_typ, sub_value in value:  # type: ignore[union-attr]
                     if sub_tag == 2:
-                        self._store("usb1_w", sub_value)
+                        self.state["usb1_w"] = sub_value
                     elif sub_tag == 3:
-                        self._store("usb2_w", sub_value)
+                        self.state["usb2_w"] = sub_value
             elif tag == 8:
                 for sub_tag, _sub_typ, sub_value in value:  # type: ignore[union-attr]
                     if sub_tag == 2:
-                        self._store("typec1_w", sub_value)
+                        self.state["typec1_w"] = sub_value
                     elif sub_tag == 5:
-                        self._store("typec2_w", sub_value)
+                        self.state["typec2_w"] = sub_value
             elif tag == 9:
                 for sub_tag, _sub_typ, sub_value in value:  # type: ignore[union-attr]
                     if sub_tag == 2:
-                        self._store("dc_out_w", sub_value)
+                        self.state["dc_out_w"] = sub_value
                     elif sub_tag == 3:
                         self.state["dc_out_v"] = sub_value
                     elif sub_tag == 4:
@@ -476,19 +462,7 @@ class StationClient:
         }
         key = mapping.get(tag)
         if key:
-            self._store(key, value)
-
-    def _store(self, key: str, value: object) -> None:
-        """Drop physically impossible bursts instead of storing them.
-
-        The firmware occasionally reports kilowatts on an idle USB port; the vendor
-        app shows the same spikes, so this filters the station's output, not ours.
-        """
-        limit = POWER_LIMITS.get(key)
-        if limit is not None and isinstance(value, (int, float)) and (value < 0 or value > limit):
-            log.warning("dropping implausible %s=%s", key, value)
-            return
-        self.state[key] = value
+            self.state[key] = value
 
     def _set_online(self, online: bool) -> None:
         with self._lock:

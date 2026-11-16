@@ -482,22 +482,6 @@ def derive_state(
     battery = state.get("battery")
     input_w = state.get("input_w") or 0
     output_w = state.get("output_w") or 0
-    # The station sometimes reports a kilowatt burst on an idle port. The per-port
-    # breakdown stays sane, so prefer it when the total does not add up.
-    port_w = [
-        value
-        for value in (
-            state.get("ac_out_w"),
-            state.get("usb1_w"),
-            state.get("usb2_w"),
-            state.get("typec1_w"),
-            state.get("typec2_w"),
-            state.get("dc_out_w"),
-        )
-        if isinstance(value, (int, float))
-    ]
-    if port_w and output_w > sum(port_w) + max(150.0, sum(port_w) * 0.6):
-        output_w = sum(port_w)
     ac_input_w = state.get("ac_input_w") or 0
     dc_input_w = state.get("dc_input_w") or 0
     charging = ac_input_w >= 5 or dc_input_w >= 5
@@ -590,8 +574,6 @@ def derive_state(
             "grid": grid_present,
             "battery_load_w": battery_load_w,
             "charging": charging,
-            "input_w": input_w,
-            "output_w": output_w,
             "status": status,
             "status_text": status_text,
             "link": state.get("link"),
