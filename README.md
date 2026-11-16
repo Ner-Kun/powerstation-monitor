@@ -163,8 +163,13 @@ bash scripts/build_ntfy.sh
 Скрипт поставить Go і sqlite, склонує ntfy v2.38.1 і збереже
 `bin/ntfy-cgo`. Перший збір займає 10–15 хвилин і близько 500 МБ диска.
 
-Якщо в GitHub Releases є готовий `ntfy-cgo` для arm64 — можна покласти його
-в `bin/ntfy-cgo` і не збирати.
+Якщо не хочеш збирати, візьми готовий бінарник із Releases (Android arm64):
+
+```bash
+mkdir -p bin
+curl -L -o bin/ntfy-cgo https://github.com/Ner-Kun/powerstation-monitor/releases/download/v0.1.0/ntfy-cgo
+chmod +x bin/ntfy-cgo
+```
 
 ### 7. Автозапуск у Termux
 
