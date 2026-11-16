@@ -333,7 +333,12 @@ class StationClient:
                 result = next((value for tag, typ, value in fields if typ == "num"), None)
                 break
         if result not in (0, 2):
-            raise RuntimeError(f"login rejected: {result}")
+            raise RuntimeError(
+                f"login rejected: {result} (a re-bound station rotates the authKey; "
+                f"run tools/get_authkey.py)"
+                if result == -1
+                else f"login rejected: {result}"
+            )
         log.info("logged in, result=%s", result)
 
     def _keepalive(self) -> None:
