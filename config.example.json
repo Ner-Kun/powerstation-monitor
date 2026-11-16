@@ -22,6 +22,7 @@
   "station_stale_seconds": 90,
   "cloud_enabled": true,
   "cloud_poll_seconds": 120,
+  "cloud_stale_seconds": 900,
   "history_db": "data/history.db",
   "history_interval_seconds": 10,
   "history_retention_days": 30

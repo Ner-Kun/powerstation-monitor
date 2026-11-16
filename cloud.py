@@ -83,9 +83,9 @@ class CloudPoller:
             try:
                 if not self.token:
                     self.token = self._login()
-                attrs = self._fetch_attrs()
-                if attrs is not None:
-                    self.on_attrs(attrs, time.time())
+                attrs, device_at = self._fetch_attrs()
+                if attrs:
+                    self.on_attrs(attrs, time.time(), device_at)
                     log.debug("cloud attrs: %s", {k: attrs[k] for k in (14, 20, 28) if k in attrs})
                 backoff = 1
                 if self.stop_event.wait(self.cfg.get("cloud_poll_seconds", 300)):
@@ -135,13 +135,14 @@ class CloudPoller:
         log.info("cloud login ok")
         return token
 
-    def _fetch_attrs(self) -> dict[int, object] | None:
+    def _fetch_attrs(self) -> tuple[dict[int, object], float]:
+        """Attributes plus the moment the station itself last uploaded them."""
         url = self.base + ATTRS_URL + "?" + urllib.parse.urlencode({"pk": self.pk, "dk": self.dk})
         status, body = _request(url, token=self.token)
         if status in (401, 403):
             log.info("cloud token expired")
             self.token = None
-            return None
+            return {}, 0.0
         if status != 200:
             raise RuntimeError(f"attrs HTTP {status}")
         payload = json.loads(body)
@@ -159,4 +160,8 @@ class CloudPoller:
             attrs[int(ab_id)] = item.get("resourceValce", item.get("resourceValue"))
         if not attrs:
             raise RuntimeError("attrs response is empty")
-        return attrs
+        device_at = 0.0
+        update_ms = (data.get("deviceData") or {}).get("updateTime")
+        if isinstance(update_ms, (int, float)) and update_ms > 0:
+            device_at = update_ms / 1000
+        return attrs, device_at

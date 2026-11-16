@@ -463,6 +463,7 @@ def derive_state(
     power_state: str | None,
     cloud: dict[int, object] | None = None,
     cloud_updated_at: float = 0.0,
+    cloud_device_at: float = 0.0,
 ) -> dict:
     now = time.time()
     cloud = cloud or {}
@@ -480,7 +481,10 @@ def derive_state(
 
     temp = state.get("temp_c")
     temp_source = "station" if temp is not None else None
-    if temp is None and cloud.get(14) is not None:
+    # The cloud keeps serving the last uploaded value forever, so only trust it
+    # while the station itself was heard from recently.
+    cloud_fresh = cloud_device_at > 0 and (now - cloud_device_at <= cfg.get("cloud_stale_seconds", 900))
+    if temp is None and cloud_fresh and cloud.get(14) is not None:
         temp = cloud[14]
         temp_source = "cloud"
     charge_limit = state.get("charge_limit")
@@ -576,6 +580,7 @@ def derive_state(
             "bms_version": bms_version,
             "frequency": frequency,
             "cloud_updated_at": cloud_updated_at,
+            "cloud_last_seen": cloud_device_at or None,
             "updated_at": now,
         }
     )
@@ -747,7 +752,7 @@ def main() -> int:
     threading.Thread(target=ntfy_worker, name="ntfy", daemon=True).start()
     alerts = AlertEngine(cfg, publish)
     latest_station: dict = {}
-    latest_cloud = {"attrs": {}, "updated_at": 0.0}
+    latest_cloud = {"attrs": {}, "updated_at": 0.0, "device_at": 0.0}
     latest_power = {"state": None}
     latest_lock = threading.Lock()
     recompute_lock = threading.Lock()
@@ -758,8 +763,9 @@ def main() -> int:
                 station = dict(latest_station)
                 cloud = dict(latest_cloud["attrs"])
                 cloud_at = latest_cloud["updated_at"]
+                cloud_device_at = latest_cloud["device_at"]
                 power_state = latest_power["state"]
-            derived = derive_state(station, cfg, power_state, cloud, cloud_at)
+            derived = derive_state(station, cfg, power_state, cloud, cloud_at, cloud_device_at)
             alerts.update(derived)
             store.update(derived)
             store.broadcast("state", derived)
@@ -775,10 +781,11 @@ def main() -> int:
             )
         recompute()
 
-    def on_cloud(attrs: dict, fetched_at: float) -> None:
+    def on_cloud(attrs: dict, fetched_at: float, device_at: float) -> None:
         with latest_lock:
             latest_cloud["attrs"] = attrs
             latest_cloud["updated_at"] = fetched_at
+            latest_cloud["device_at"] = device_at
         recompute()
 
     client = StationClient(

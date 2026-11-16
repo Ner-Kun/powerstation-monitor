@@ -27,6 +27,7 @@ CMD_PING = 28727
 CMD_PONG = 28728
 CMD_HB = 28729
 CMD_READ = 17
+CMD_READ_RESP = 18
 CMD_WRITE = 19
 CMD_REPORT = 20
 CMD_ACK = 28726
@@ -294,7 +295,7 @@ class StationClient:
             cmd, _pid, payload = frame
             if cmd == CMD_PING:
                 self._send(CMD_PONG, b"", encrypt=False)
-            elif cmd == CMD_REPORT:
+            elif cmd in (CMD_REPORT, CMD_READ_RESP):
                 last_report = time.monotonic()
                 self._handle_report(payload)
             elif cmd == CMD_ACK:
