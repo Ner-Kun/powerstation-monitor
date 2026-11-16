@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0f1a">
+<title>Станція</title>
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="manifest" href="/manifest.json">
+<style>
+  :root {
+    --bg: #0a0f1a;
+    --card: #111a2b;
+    --card-2: #162137;
+    --border: #22304a;
+    --text: #e8eefc;
+    --muted: #8fa3c4;
+    --green: #38d996;
+    --red: #ff5c6c;
+    --amber: #ffb84d;
+    --blue: #4da3ff;
+    --orange: #ff9d4d;
+    --radius: 18px;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.45;
+    min-height: 100vh;
+    padding: max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+  }
+  .wrap { max-width: 860px; margin: 0 auto; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 10px 12px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 220px; }
+  .logo { width: 38px; height: 38px; flex: 0 0 auto; }
+  .brand h1 { font-size: 1.15rem; margin: 0; font-weight: 650; letter-spacing: .2px; }
+  .brand .sub { color: var(--muted); font-size: .75rem; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 7px; white-space: nowrap;
+    flex: 0 0 auto; font-size: .85rem; font-weight: 650; padding: 8px 11px; border-radius: 999px;
+    background: #1a263d; color: var(--muted); border: 1px solid var(--border);
+  }
+  .pill::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; box-shadow: 0 0 10px currentColor; }
+  .pill.grid, .pill.full { color: var(--green); background: rgba(56,217,150,.10); border-color: rgba(56,217,150,.25); }
+  .pill.on_battery { color: var(--red); background: rgba(255,92,108,.10); border-color: rgba(255,92,108,.25); }
+  .pill.not_charging { color: var(--amber); background: rgba(255,184,77,.10); border-color: rgba(255,184,77,.25); }
+  .pill.offline, .pill.unknown { color: var(--muted); }
+  .status-why { margin: 0 2px 12px; color: var(--muted); font-size: .86rem; }
+  .status-why:empty { display: none; }
+  .card {
+    background: linear-gradient(180deg, var(--card), var(--card-2));
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px; margin-bottom: 12px;
+  }
+  .hero { display: grid; grid-template-columns: 1.25fr .75fr; gap: 16px; align-items: center; }
+  .battery-num { font-size: 3.4rem; font-weight: 750; line-height: 1; letter-spacing: -2px; }
+  .battery-num small { font-size: 1.2rem; font-weight: 600; color: var(--muted); letter-spacing: 0; }
+  .hero .label { color: var(--muted); font-size: .8rem; }
+  .bar { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; height: 16px; margin-top: 12px; }
+  .bar > i { background: #16213a; border-radius: 3px; }
+  .bar > i.on { background: var(--bar-color, var(--green)); }
+  .hero .right { text-align: right; }
+  .hero .remain { font-size: 1.35rem; font-weight: 700; margin-top: 4px; }
+  .hero .hint { color: var(--muted); font-size: .78rem; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .power { padding: 14px 16px; }
+  .power .label { color: var(--muted); font-size: .8rem; }
+  .power .value { font-size: 2.1rem; font-weight: 750; letter-spacing: -1px; margin-top: 4px; }
+  .power .value small { font-size: .9rem; font-weight: 600; color: var(--muted); letter-spacing: 0; }
+  .power.in .value { color: var(--blue); }
+  .power.out .value { color: var(--orange); }
+  .cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .mini { background: rgba(255,255,255,.025); border: 1px solid #1d2a42; border-radius: 14px; padding: 11px 12px; min-width: 0; }
+  .mini .k { color: var(--muted); font-size: .8rem; font-weight: 500; }
+  .mini .v { font-size: 1.05rem; font-weight: 650; margin-top: 3px; }
+  .mini .src { font-size: .75rem; color: var(--muted); margin-left: 4px; font-weight: 500; }
+  .section-title { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 18px 2px 8px; }
+  .section-title h2 { font-size: .8rem; margin: 0; color: var(--muted); font-weight: 500; }
+  .section-title .hint { color: var(--muted); font-size: .72rem; }
+  .chart-card { padding: 12px 12px 8px; }
+  .chart-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 2px 4px 6px; }
+  .legend { display: flex; gap: 14px; font-size: .75rem; color: var(--muted); flex-wrap: wrap; }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dot.in { background: var(--blue); }
+  .dot.out { background: var(--orange); }
+  .dot.bat { background: var(--green); }
+  canvas { width: 100%; display: block; }
+  #powerChart { height: 136px; }
+  #batteryChart { height: 82px; margin-top: 6px; }
+  .chart-card.is-empty .chart-head, .chart-card.is-empty canvas { display: none; }
+  .chart-card.is-empty::before { content: "За 24 години даних ще немає"; color: var(--muted); font-size: .86rem; display: block; padding: 10px 4px; }
+  .footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--muted); font-size: .72rem; padding: 8px 2px 0; flex-wrap: wrap; }
+  .footer button {
+    background: transparent; color: var(--muted); border: 1px solid var(--border);
+    border-radius: 999px; padding: 0 14px; min-height: 44px; font: inherit; cursor: pointer;
+  }
+  .footer button:hover { color: var(--text); border-color: #3a4d72; }
+  .footer button:disabled { opacity: .65; cursor: default; }
+  button:focus-visible, a:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+  body[data-status="offline"] .live { border-style: dashed; }
+  body[data-status="offline"] .live :is(.value, .battery-num, .remain, .mini .v) { color: var(--muted); }
+  body[data-status="offline"] .bar > i.on { background: #3a4d72; }
+  body[data-status="offline"] .live .label::after { content: " · останні дані"; color: var(--muted); }
+  :is(.battery-num, .remain, .value, .mini .v) { font-variant-numeric: tabular-nums; }
+  @media (max-width: 560px) {
+    .pill { flex: 1 1 100%; justify-content: center; white-space: normal; }
+  }
+  @media (max-width: 520px) {
+    .hero { grid-template-columns: 1fr; gap: 10px; }
+    .hero .right { text-align: left; }
+    .battery-num { font-size: 3rem; }
+    .power .value { font-size: 1.8rem; }
+  }
+  @media (min-width: 700px) {
+    body { padding-top: 26px; }
+    .cards { grid-template-columns: repeat(4, 1fr); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .bar > i { transition: none; }
+  }
+</style>
+</head>
+<body data-status="offline">
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 512 512" aria-hidden="true">
+        <rect width="512" height="512" rx="96" fill="#111a2b" stroke="#22304a" stroke-width="8"/>
+        <path d="M286 58 150 292h98l-22 162 146-244h-96z" fill="#38d996"/>
+      </svg>
+      <div>
+        <h1>Станція</h1>
+        <div class="sub">P1500 Plus · локальний монітор</div>
+      </div>
+    </div>
+    <div id="status" class="pill offline" role="status" aria-live="polite" aria-atomic="true">Немає даних</div>
+  </header>
+  <p id="statusWhy" class="status-why" aria-live="polite"></p>
+
+  <section class="card hero live">
+    <div>
+      <div class="label">Заряд батареї</div>
+      <div class="battery-num"><span id="battery">—</span><small>%</small></div>
+      <div class="bar" id="batteryBar" aria-hidden="true">
+        <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+      </div>
+      <div class="hint" id="batteryHint">Очікування даних</div>
+    </div>
+    <div class="right">
+      <div class="label">Залишилося роботи</div>
+      <div class="remain" id="remaining">—</div>
+      <div class="hint" id="remainingHint">розрахунок за поточним навантаженням</div>
+    </div>
+  </section>
+
+  <div class="grid2">
+    <section class="card power in live">
+      <div class="label">Вхід</div>
+      <div class="value"><span id="input">—</span> <small>Вт</small></div>
+    </section>
+    <section class="card power out live">
+      <div class="label">Вихід</div>
+      <div class="value"><span id="output">—</span> <small>Вт</small></div>
+    </section>
+  </div>
+
+  <section class="card live">
+    <div class="cards">
+      <div class="mini"><div class="k">AC-вихід</div><div class="v"><span id="acOut">—</span> Вт</div></div>
+      <div class="mini"><div class="k">USB</div><div class="v"><span id="usbOut">—</span> Вт</div></div>
+      <div class="mini"><div class="k">Type-C</div><div class="v"><span id="typecOut">—</span> Вт</div></div>
+      <div class="mini"><div class="k">DC</div><div class="v"><span id="dcOut">—</span> Вт</div></div>
+      <div class="mini"><div class="k">Температура</div><div class="v"><span id="temp">—</span> °C<span id="tempSrc" class="src"></span></div></div>
+      <div class="mini"><div class="k">Мережа</div><div class="v" id="gridText">—</div></div>
+      <div class="mini"><div class="k">Заряджання</div><div class="v" id="chargeText">—</div></div>
+      <div class="mini"><div class="k">Версії</div><div class="v" id="versions">—</div></div>
+    </div>
+  </section>
+
+  <div class="section-title">
+    <h2>За 24 години</h2>
+    <div class="hint" id="historyHint">завантаження…</div>
+  </div>
+  <section class="card chart-card" id="chartCard">
+    <div class="chart-head">
+      <div class="legend">
+        <span><i class="dot in"></i>вхід</span>
+        <span><i class="dot out"></i>вихід</span>
+        <span><i class="dot bat"></i>заряд</span>
+      </div>
+    </div>
+    <canvas id="powerChart" role="img" aria-label="Графік потужності за 24 години"></canvas>
+    <canvas id="batteryChart" role="img" aria-label="Графік заряду батареї за 24 години"></canvas>
+  </section>
+
+  <div class="footer">
+    <div>Оновлено: <span id="updated">—</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button id="testBtn" type="button">Перевірити сповіщення</button>
+      <button id="notifyBtn" type="button">Сповіщення в браузері</button>
+    </div>
+  </div>
+  <div id="testResult" class="sr-only" role="status" aria-live="polite"></div>
+</div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const SHORT = {
+    grid: "Мережа є",
+    full: "Повний заряд",
+    on_battery: "На батареї",
+    not_charging: "Немає заряджання",
+    offline: "Немає даних",
+    unknown: "Невідомо",
+  };
+  const rtf = new Intl.RelativeTimeFormat("uk", { numeric: "auto" });
+  const timeFmt = new Intl.DateTimeFormat("uk-UA", { hour: "2-digit", minute: "2-digit" });
+  let current = null;
+  let historyPoints = [];
+  let renderQueued = false;
+
+  function fmtAgo(ts) {
+    if (!ts) return "—";
+    const sec = Math.max(0, Math.round(Date.now() / 1000 - ts));
+    if (sec < 5) return "щойно";
+    if (sec < 60) return rtf.format(-sec, "second");
+    if (sec < 3600) return rtf.format(-Math.round(sec / 60), "minute");
+    return rtf.format(-Math.round(sec / 3600), "hour");
+  }
+
+  function applyStatus(status, text) {
+    document.body.dataset.status = status;
+    const pill = $("status");
+    pill.className = `pill ${status}`;
+    if (pill.textContent !== text) pill.textContent = text;
+  }
+
+  function num(value, digits = 0) {
+    if (value === null || value === undefined) return "—";
+    return Number(value).toFixed(digits);
+  }
+
+  function sum(a, b) {
+    if (a == null && b == null) return null;
+    return (a || 0) + (b || 0);
+  }
+
+  function pointsLabel(n) {
+    const mod10 = n % 10, mod100 = n % 100;
+    if (mod10 === 1 && mod100 !== 11) return `${n} точка`;
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return `${n} точки`;
+    return `${n} точок`;
+  }
+
+  function render(s) {
+    current = s;
+    const short = SHORT[s.status] || s.status_text || "Невідомо";
+    applyStatus(s.status || "offline", short);
+    $("statusWhy").textContent = s.status === "not_charging" ? (s.status_text || "") : "";
+
+    const battery = s.battery;
+    $("battery").textContent = battery === null || battery === undefined ? "—" : Math.round(battery);
+    const bar = $("batteryBar");
+    const color = s.status === "on_battery" ? "var(--red)" : s.status === "not_charging" ? "var(--amber)" : "var(--green)";
+    bar.style.setProperty("--bar-color", color);
+    const filled = Math.round((battery || 0) / 10);
+    [...bar.children].forEach((segment, index) => segment.classList.toggle("on", index < filled));
+    if (s.status === "on_battery") {
+      const inW = s.input_w != null ? num(s.input_w) : "—";
+      const outW = s.output_w != null ? num(s.output_w) : "—";
+      $("batteryHint").textContent = `Вхід ${inW} Вт, вихід ${outW} Вт — батарея розряджається`;
+    } else {
+      $("batteryHint").textContent = s.status_text || "Очікування даних";
+    }
+
+    $("remaining").textContent = s.remaining_text || "—";
+    let remainingHint = "немає даних";
+    if (s.remaining_kind === "grid") remainingHint = "батарея не розряджається";
+    else if (s.remaining_kind === "charging") remainingHint = "триває заряджання";
+    else if (s.remaining_kind === "discharge") remainingHint = "розрахунок за поточним навантаженням";
+    $("remainingHint").textContent = remainingHint;
+
+    $("input").textContent = num(s.input_w);
+    $("output").textContent = num(s.output_w);
+    $("acOut").textContent = num(s.ac_out_w);
+    $("usbOut").textContent = num(sum(s.usb1_w, s.usb2_w));
+    $("typecOut").textContent = num(sum(s.typec1_w, s.typec2_w));
+    $("dcOut").textContent = num(s.dc_out_w);
+    $("temp").textContent = num(s.temp_c);
+    $("tempSrc").textContent = s.temp_source === "cloud" ? "з хмари" : "";
+    $("gridText").textContent = s.grid === true ? "є" : s.grid === false ? (s.input_w > 5 ? "не вистачає" : "немає") : "—";
+    $("chargeText").textContent = s.charging ? `триває · ${num(s.ac_input_w)} Вт` : "немає";
+    $("versions").textContent = (s.inverter_version ?? "—") + " / " + (s.bms_version ?? "—");
+    $("updated").textContent = fmtAgo(s.updated_at);
+
+    document.title = `${Math.round(battery || 0)}% · ${short}`;
+  }
+
+  function queueRender(s) {
+    current = s;
+    if (renderQueued) return;
+    renderQueued = true;
+    requestAnimationFrame(() => {
+      renderQueued = false;
+      render(current);
+    });
+  }
+
+  function chartSetup(canvas, cssHeight) {
+    const dpr = window.devicePixelRatio || 1;
+    const width = canvas.clientWidth || 320;
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(cssHeight * dpr);
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, width, cssHeight);
+    return { ctx, width, height: cssHeight };
+  }
+
+  function drawTimeAxis(ctx, width, height, left, plotW, t0, t1) {
+    ctx.fillStyle = "#8fa3c4";
+    ctx.font = "11px system-ui";
+    for (const fraction of [0, .25, .5, .75, 1]) {
+      const ts = t0 + (t1 - t0) * fraction;
+      const text = timeFmt.format(new Date(ts * 1000));
+      if (fraction === 0) {
+        ctx.textAlign = "left";
+        ctx.fillText(text, left, height - 4);
+      } else if (fraction === 1) {
+        ctx.textAlign = "right";
+        ctx.fillText(text, width - 8, height - 4);
+      } else {
+        ctx.textAlign = "center";
+        ctx.fillText(text, left + plotW * fraction, height - 4);
+      }
+    }
+    ctx.textAlign = "left";
+  }
+
+  function drawPower() {
+    const canvas = $("powerChart");
+    const { ctx, width, height } = chartSetup(canvas, 136);
+    const pts = historyPoints;
+    if (!pts.length) return;
+    const left = 40, right = 8, top = 10, bottom = 26;
+    const plotW = width - left - right;
+    const plotH = height - top - bottom;
+    let max = 100;
+    for (const p of pts) max = Math.max(max, p.input_w || 0, p.output_w || 0);
+    max = Math.ceil(max / 100) * 100;
+
+    ctx.strokeStyle = "#1d2a42";
+    ctx.fillStyle = "#8fa3c4";
+    ctx.font = "10px system-ui";
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 3; i++) {
+      const y = top + plotH * (i / 3);
+      ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(width - right, y); ctx.stroke();
+      ctx.fillText(`${Math.round(max * (1 - i / 3))}`, 4, y + 3);
+    }
+
+    const t0 = pts[0].ts, t1 = pts[pts.length - 1].ts || (t0 + 1);
+    const x = (ts) => left + ((ts - t0) / Math.max(1, t1 - t0)) * plotW;
+    const y = (value) => top + plotH - (Math.max(0, value || 0) / max) * plotH;
+
+    function line(key, color) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      let started = false;
+      for (const p of pts) {
+        if (p[key] === null || p[key] === undefined) { started = false; continue; }
+        const px = x(p.ts), py = y(p[key]);
+        if (!started) { ctx.moveTo(px, py); started = true; } else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+    }
+    line("input_w", "#4da3ff");
+    line("output_w", "#ff9d4d");
+    drawTimeAxis(ctx, width, height, left, plotW, t0, t1);
+
+    const last = pts[pts.length - 1];
+    canvas.setAttribute(
+      "aria-label",
+      `Графік потужності за 24 години. Востаннє: вхід ${num(last.input_w)} Вт, вихід ${num(last.output_w)} Вт, пік ${max} Вт.`
+    );
+  }
+
+  function drawBattery() {
+    const canvas = $("batteryChart");
+    const { ctx, width, height } = chartSetup(canvas, 82);
+    const pts = historyPoints;
+    if (!pts.length) return;
+    const left = 40, right = 8, top = 8, bottom = 18;
+    const plotW = width - left - right;
+    const plotH = height - top - bottom;
+    ctx.strokeStyle = "#1d2a42";
+    ctx.fillStyle = "#8fa3c4";
+    ctx.font = "10px system-ui";
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 2; i++) {
+      const y = top + plotH * (i / 2);
+      ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(width - right, y); ctx.stroke();
+      ctx.fillText(`${100 - i * 50}`, 8, y + 3);
+    }
+    const t0 = pts[0].ts, t1 = pts[pts.length - 1].ts || (t0 + 1);
+    const x = (ts) => left + ((ts - t0) / Math.max(1, t1 - t0)) * plotW;
+    const y = (value) => top + plotH - (Math.max(0, Math.min(100, value || 0)) / 100) * plotH;
+    ctx.strokeStyle = "#38d996";
+    ctx.lineWidth = 2;
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    let started = false;
+    for (const p of pts) {
+      if (p.battery === null || p.battery === undefined) { started = false; continue; }
+      const px = x(p.ts), py = y(p.battery);
+      if (!started) { ctx.moveTo(px, py); started = true; } else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    drawTimeAxis(ctx, width, height, left, plotW, t0, t1);
+    const last = pts[pts.length - 1];
+    canvas.setAttribute("aria-label", `Графік заряду батареї за 24 години. Востаннє: ${num(last.battery)}%.`);
+  }
+
+  async function loadHistory() {
+    const chartCard = $("chartCard");
+    try {
+      const res = await fetch("/api/history?hours=24", { cache: "no-store" });
+      const data = await res.json();
+      historyPoints = data.points || [];
+      chartCard.classList.toggle("is-empty", historyPoints.length === 0);
+      $("historyHint").textContent = historyPoints.length ? pointsLabel(historyPoints.length) : "немає даних";
+      drawPower(); drawBattery();
+    } catch (_) {
+      $("historyHint").textContent = "немає зв’язку";
+    }
+  }
+
+  const es = new EventSource("/events");
+  es.addEventListener("state", (event) => {
+    try { queueRender(JSON.parse(event.data)); } catch (_) {}
+  });
+  es.addEventListener("alert", (event) => {
+    try {
+      const alert = JSON.parse(event.data);
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification(alert.title, { body: alert.message, icon: "/icon.svg", tag: "station-alert" });
+      }
+    } catch (_) {}
+  });
+  es.onerror = () => {
+    applyStatus("offline", "Немає зв’язку");
+    $("statusWhy").textContent = "Немає зв’язку з сервером";
+  };
+
+  $("testBtn").addEventListener("click", async () => {
+    const btn = $("testBtn");
+    const result = $("testResult");
+    btn.disabled = true;
+    try {
+      const res = await fetch("/api/test-alert", { method: "POST" });
+      if (!res.ok) throw new Error(String(res.status));
+      btn.textContent = "Надіслано";
+      result.textContent = "Тестове сповіщення надіслано";
+    } catch (_) {
+      btn.textContent = "Помилка";
+      result.textContent = "Не вдалося надіслати тестове сповіщення";
+    }
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.textContent = "Перевірити сповіщення";
+    }, 3000);
+  });
+
+  const notifyBtn = $("notifyBtn");
+  if (!window.isSecureContext) {
+    notifyBtn.textContent = "Сповіщення лише через ntfy";
+    notifyBtn.disabled = true;
+    notifyBtn.title = "Браузерні сповіщення потребують https або localhost";
+  } else {
+    notifyBtn.addEventListener("click", async () => {
+      if (!("Notification" in window)) return;
+      const permission = await Notification.requestPermission();
+      notifyBtn.textContent = permission === "granted" ? "Сповіщення увімкнено" : "Сповіщення заблоковано";
+    });
+  }
+
+  window.addEventListener("resize", () => { drawPower(); drawBattery(); });
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+      loadHistory();
+      if (current) render(current);
+    }
+  });
+  setInterval(() => { if (current) $("updated").textContent = fmtAgo(current.updated_at); }, 5000);
+  setInterval(loadHistory, 60000);
+  loadHistory();
+
+  if ("serviceWorker" in navigator && window.isSecureContext) {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  }
+})();
+</script>
+</body>
+</html>
