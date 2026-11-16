@@ -406,7 +406,10 @@ python tools/station_test.py 192.168.1.100
 Код і логи — англійською. Інтерфейс, сповіщення і трей — українською.
 
 Протокол реверс-інжинирився з застосунку Wonderfree. За основу брали
-[bordeux/ha-oukitel-powerstation](https://github.com/bordeux/ha-oukitel-powerstation).
+[bordeux/ha-oukitel-powerstation](https://github.com/bordeux/ha-oukitel-powerstation) —
+там лежить повний розбір протоколу (`REVERSE_ENGINEERING.md`), моделі даних для
+кількох станцій і готовий клієнт для Home Assistant. Наш TSL для `p11uve` збігається
+з їхнім один-в-один.
 `ntfy` — [binwiederhier/ntfy](https://github.com/binwiederhier/ntfy).
 Трей — `pystray` + `winotify`.
 
